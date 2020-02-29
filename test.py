@@ -1,5 +1,4 @@
 import sys
-import argparse
 
 from gv import MODULE, STRUCT, UNION, BIT, INPUT, OUTPUT
 from gv import ELABORATE, stream
@@ -26,24 +25,16 @@ class TOP(MODULE):
 		self.c = self.a[0:1] & self.b[0:1]
 		l = 5
 
-		# self.a = BIT(block_t.width, 45)
-
-		# EXISTS('a', locals(), globals(), None)
-		if EXISTS('a', locals(), globals(), self) and isinstance(self.a, BIT):
-			CONNECT(self.a, BIT(block_t(45), 45))
-		else:
-			self.a = 4
-
-		# if self.c == BIT(1, 45):
-		# 	pass
-		# else:
-		# 	pass
-
-		def if_body():
+		if self.c == BIT(2, 3):
 			self.c = BIT(1, 1)
-		def else_body():
+		else:
 			self.c = BIT(1, 0)
-		COND().IF(lambda:self.c == BIT(2, 3), if_body).ELSE(else_body)
+
+		# def if_body():
+		# 	self.c = BIT(1, 1)
+		# def else_body():
+		# 	self.c = BIT(1, 0)
+		# COND().IF(lambda:self.c == BIT(2, 3), if_body).ELSE(else_body)
 
 def main():
 	TOP()
