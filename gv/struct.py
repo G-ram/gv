@@ -7,3 +7,6 @@ class struct(bit):
 		# ELABORATE.struct(self.__class__.__name__)
 		self.__impl__()
 		super().__init__(ELABORATE.bits())
+
+	def __impl__(self):
+		raise NotImplementedError()
