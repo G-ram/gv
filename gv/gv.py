@@ -74,6 +74,7 @@ def main(args):
 
 	with open(args.top[0], 'r') as t:
 		lines = t.readlines()
+		lines.insert(0, 'from gv import COND, EXISTS, CONNECT\n')
 		lines = replace_conditionals(lines)
 		lines = replace_assignments(lines)
 

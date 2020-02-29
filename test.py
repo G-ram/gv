@@ -1,9 +1,8 @@
 import sys
 
-from gv import MODULE, STRUCT, UNION, BIT, INPUT, OUTPUT
+from gv import MODULE, STRUCT, UNION, BIT, REG, INPUT, OUTPUT, CONCAT
 from gv import ELABORATE, stream
 
-from gv import COND, EXISTS, CONNECT
 GLOBAL = 6
 
 class block_t(UNION):
