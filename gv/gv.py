@@ -20,6 +20,7 @@ def replace_assignments(lines):
 	for i, line in enumerate(lines):
 		if 'MODULE' in line:
 			found_module = True
+			found_impl = False
 		elif 'class' in line:
 			found_module = False
 			found_impl = False
@@ -40,11 +41,19 @@ def replace_assignments(lines):
 					tostr(match.group(3)), 
 					tostr(match.group(4)))
 				post_eq = '%s%s' % (tostr(match.group(4)), tostr(match.group(5)))
-				newlines.append('%sif EXISTS("%s", locals(), globals(), %s) and isinstance(%s, BIT):\n' % (
-					indent, name, classname, pre_eq))
-				newlines.append('%s\tCONNECT(%s, (%s))\n' % (indent, pre_eq, post_eq))
-				newlines.append('%selse:\n' % (indent))
-				newlines.append('\t%s' % line)
+
+				if match.group(2) is None:
+					newlines.append('%sif EXISTS("%s", locals(), globals()) and isinstance(%s, BIT):\n' % (
+						indent, name, pre_eq))
+					newlines.append('%s\tCONNECT(%s, (%s))\n' % (indent, pre_eq, post_eq))
+					newlines.append('%selse:\n' % (indent))
+					newlines.append('\t%s' % line)
+				else:
+					newlines.append('%sif EXISTS("%s", %s) and isinstance(%s, BIT):\n' % (
+						indent, name, classname, pre_eq))
+					newlines.append('%s\tCONNECT(%s, (%s))\n' % (indent, pre_eq, post_eq))
+					newlines.append('%selse:\n' % (indent))
+					newlines.append('\t%s' % line)
 			else:
 				newlines.append(line)
 		else:
