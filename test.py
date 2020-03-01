@@ -19,7 +19,7 @@ class TOP(MODULE):
 
 	def __impl__(self):
 		self.a = INPUT(block_t())
-		self.b = INPUT(BIT(32))
+		self.b = INPUT(BIT(32)(8))
 		self.c = OUTPUT(BIT(4))
 		self.c = self.a[0:1] & self.b[0:1]
 		l = 5
