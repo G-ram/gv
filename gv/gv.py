@@ -9,27 +9,55 @@ def tostr(v):
 	if v is None: return ''
 	return v
 
-def process_conditional_body(lines, branch, cond=None):
-	return []
-
-def find_conditional(lines, indent_level):
+def find_conditional(lines):
+	newlines = []
+	elif_count = 0
+	max_indent = max(map(lambda x: x.count('\t'), lines))
+	cmds = [None for _ in range(max_indent + 1)]
 	for i, line in enumerate(lines):
-		match = re.match(r'(\t*)(if([^:]+))|(elif([^:]+))|(else):\s*\n', line)
-		branch = 2 # Else
-		cond = None
-		if match.group(2) is not None:
-			branch = 0 # If
-			cond = match.group(3)
-		elif match.group(4) is not None:
-			branch = 1 # Elif
-			cond = match.group(5)
-		if cond_match is not None and match.group(1).count('\t') == indent_level:
-			for j, l in enumerate(lines[i+1:]):
-				elif_else_match = re.match(r'(\t*)(elif([^:]+):)|(else:)\n', l)
-				if elif_else_match is not None and \
-					elif_else_match.group(1).count('\t') == indent_level:
-					return process_conditional_body(lines[i+1:i+j], branch, cond)
-	return process_conditional_body(lines)
+		replace = False
+		match = re.match(r'(\t*)(if([^:]+)):\s*\n', line)
+		if match is not None:
+			indent = 0 if match.group(1) is None else match.group(1).count('\t')
+			cmds[indent] = '%sCOND().IF(lambda:%s, if_body)' % (
+				(indent * '\t'), match.group(3))
+			newlines.append('%sdef if_body():\n' % (indent * '\t'))
+			replace = True
+
+		match = re.match(r'(\t*)(elif([^:]+)):\s*\n', line)
+		if match is not None:
+			indent = 0 if match.group(1) is None else match.group(1).count('\t')
+			cmds[indent] += '.ELIF(lambda:%s, elif_body%d)' % (
+				match.group(3), elif_count)
+			newlines.append('%sdef elif_body%d():\n' % (
+				(indent * '\t'), elif_count))
+			elif_count += 1
+			replace = True
+
+		match = re.match(r'(\t*)else:\s*\n', line)
+		if match is not None:
+			indent = 0 if match.group(1) is None else match.group(1).count('\t')
+			cmds[indent] += '.ELSE(else_body)'
+			newlines.append('%sdef else_body():\n' % (indent * '\t'))
+			replace = True
+
+		if not replace: 
+			newlines.append(line)
+
+		if i < len(lines) - 1:
+			match = re.match(r'(\t*)[^\n].*', lines[i+1])
+			if match is not None:
+				indent = 0 if match.group(1) is None else match.group(1).count('\t')
+				for j in range(indent + 1, len(cmds)):
+					if cmds[j] is not None:
+						newlines.append('%s\n' % cmds[j])
+						cmds[j] = None
+
+	for cmd in cmds:
+		if cmd is not None:
+			newlines.append('%s\n' % cmd)
+			
+	return newlines
 
 def replace_conditionals(lines):
 	newlines = []

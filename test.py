@@ -25,15 +25,9 @@ class TOP(MODULE):
 		l = 5
 
 		if self.c == BIT(2, 3):
-			self.c = BIT(1, 1)
-		else:
-			self.c = BIT(1, 0)
-
-		# def if_body():
-		# 	self.c = BIT(1, 1)
-		# def else_body():
-		# 	self.c = BIT(1, 0)
-		# COND().IF(lambda:self.c == BIT(2, 3), if_body).ELSE(else_body)
+			self.c = BIT(2, 1)
+		elif self.c == BIT(2, 1):
+			self.c = BIT(2, 0)
 
 def main():
 	TOP()
