@@ -30,7 +30,7 @@ class TOP(MODULE):
 			self.c = BIT(2, 0)
 
 def main():
-	TOP()
+	a = TOP()
 	ELABORATE.dump(stream(sys.stdout))
 
 if __name__ == '__main__':

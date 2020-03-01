@@ -1,9 +1,7 @@
-from .elaborate import ELABORATE
-
 def output(handle):
-	# Elaborate
+	handle.dxn = 1
 	return handle
 
 def input(handle):
-	# Elaborate
+	handle.dxn = 0
 	return handle
