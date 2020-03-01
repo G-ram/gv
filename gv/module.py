@@ -35,6 +35,7 @@ class module(object):
 				prev_port = True
 		f.unindent()
 		f.writenl(');')
+		f.blank()
 
 		for k in self.types:
 			f.writenl(self.types[k].__define_repr__())
