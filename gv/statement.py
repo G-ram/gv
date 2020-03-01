@@ -57,16 +57,14 @@ class cond(object):
 		self.evaluated = True
 		return self
 
+indent_level = 0
 class stmt(object):
 	def __init__(self, expr):
 		self.expr = expr
 		elaborate.ELABORATE.stmt(self)
 
 	def __repr__(self):
-		rep = self.expr.__repr__()
-		if len(rep) == 0:
-			return ''
-		return '%s;' % rep
+		return '%s%s;\n' % (indent_level * '\t', self.expr.__repr__())
 
 class cond_stmt(object):
 	def __init__(self):
@@ -81,29 +79,32 @@ class cond_stmt(object):
 		s = StringIO()
 		f = stream.stream(s)
 		if self.if_cond is not None:
-			f.writenl('if%s ' % self.if_cond.__repr__())
+			f.writenl('%sif%s ' % (
+				indent_level * '\t', self.if_cond.__repr__()))
 			f.write(self.if_block.__repr__())
 			for i, elif_cond in enumerate(self.elif_conds):
-				f.writenl('else if%s' % elif_cond.__repr__())
+				f.writenl('%selse if%s' % (
+					indent_level * '\t', elif_cond.__repr__()))
 				f.write(self.elif_blocks[i].__repr__())
 			if self.else_block is not None:
-				f.writenl('else')
+				f.writenl('%selse' % (indent_level * '\t'))
 				f.write(self.else_block.__repr__())
 		elif len(self.elif_conds) > 0:
-			f.writenl('if(%s) ' % self.elif_conds[0].__repr__())
+			f.writenl('%sif(%s) ' % (
+				indent_level * '\t', self.elif_conds[0].__repr__()))
 			f.write(self.elif_blocks[0].__repr__())
 			for i, elif_cond in self.elif_conds:
-				f.writenl('else if%s' % elif_cond.__repr__())
+				f.writenl('%selse if%s' % (
+					indent_level * '\t', elif_cond.__repr__()))
 				f.write(self.elif_blocks[i].__repr__())
 			if self.else_block is not None:
-				f.writenl('else')
+				f.writenl('%selse' % (indent_level * '\t'))
 				f.write(self.else_block.__repr__())
 		elif self.else_block is not None:
 			f.write(self.else_block.__repr__())
 		return s.getvalue()
 
 class block_stmt(object):
-	indent_level = 0
 	def __init__(self, *args):
 		self.stmts = [stmt for stmt in args]
 
@@ -112,10 +113,11 @@ class block_stmt(object):
 		return self
 
 	def __repr__(self):
-		rep = '%sbegin\n' % (block_stmt.indent_level * '\t')
-		block_stmt.indent_level += 1
+		global indent_level
+		rep = '%sbegin\n' % (indent_level * '\t')
+		indent_level += 1
 		for stmt in self.stmts:
-			rep += '%s%s\n' % (block_stmt.indent_level * '\t', stmt.__repr__())
-		block_stmt.indent_level -= 1
-		rep += '%send\n' % (block_stmt.indent_level * '\t')
+			rep += '%s' % stmt.__repr__()
+		indent_level -= 1
+		rep += '%send\n' % (indent_level * '\t')
 		return rep

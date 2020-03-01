@@ -5,7 +5,7 @@ import elaborate
 
 class Struct(bit.bit):
 	def __init__(self, value=None, name=None):
-		self.value = value;
+		self.value = value
 		self.type_name = self.__class__.__name__ 
 		elaborate.ELABORATE.typedef(self)
 		self.__impl__()

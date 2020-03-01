@@ -23,10 +23,16 @@ class module(object):
 		f.writenl('module %s(' % self.name)
 		f.indent()
 		ports = []
+		prev_port = False
 		for p in self.declarations:
 			if p.dxn is not None:
+				if prev_port:
+					f.unindent()
+					f.writenl(',')
+					f.indent()
 				ports.append(p)
-				f.writenl(p.__declare_repr__())
+				f.write(p.__declare_repr__()[:-1])
+				prev_port = True
 		f.unindent()
 		f.writenl(');')
 

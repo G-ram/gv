@@ -221,7 +221,7 @@ class get_expr(bit):
 		if self.high is None:
 			return '(%s[%s])' % (self.op.__repr__(), self.low.__repr__())
 		return '(%s[%s:%s])' % (
-			self.op.__repr__(), self.low.__repr__(), self.high.__repr__())
+			self.op.__repr__(), self.high.__repr__(), self.low.__repr__())
 
 class assign_expr(bit):
 	def __init__(self, dest, src):
@@ -231,7 +231,7 @@ class assign_expr(bit):
 		self.value = src.value
 
 	def __repr__(self):
-		return '%s = %s;' % (self.dest.__repr__(), self.src.__repr__())
+		return '%s = %s' % (self.dest.__repr__(), self.src.__repr__())
 
 def concat(*args):
 	return list_op(args)
