@@ -9,8 +9,62 @@ def tostr(v):
 	if v is None: return ''
 	return v
 
+def process_conditional_body(lines, branch, cond=None):
+	return []
+
+def find_conditional(lines, indent_level):
+	for i, line in enumerate(lines):
+		match = re.match(r'(\t*)(if([^:]+))|(elif([^:]+))|(else):\s*\n', line)
+		branch = 2 # Else
+		cond = None
+		if match.group(2) is not None:
+			branch = 0 # If
+			cond = match.group(3)
+		elif match.group(4) is not None:
+			branch = 1 # Elif
+			cond = match.group(5)
+		if cond_match is not None and match.group(1).count('\t') == indent_level:
+			for j, l in enumerate(lines[i+1:]):
+				elif_else_match = re.match(r'(\t*)(elif([^:]+):)|(else:)\n', l)
+				if elif_else_match is not None and \
+					elif_else_match.group(1).count('\t') == indent_level:
+					return process_conditional_body(lines[i+1:i+j], branch, cond)
+	return process_conditional_body(lines)
+
 def replace_conditionals(lines):
-	newlines = lines
+	newlines = []
+	found_module = False
+	found_impl = False
+	indent_level = 0
+	i = 0
+	while i < len(lines):
+		if 'MODULE' in lines[i]:
+			found_module = True
+			found_impl = False
+		elif 'class' in lines[i]:
+			found_module = False
+			found_impl = False
+
+		if found_module and '__impl__' in lines[i]:
+			indent_level = lines[i].count('\t')
+			found_impl = True
+
+		if found_module and found_impl:
+			newlines.append(lines[i])
+			for j, l in enumerate(lines[i+1:]):
+				match = re.match(r'\s*\n\s*', l)
+				if match is not None:
+					continue
+				if l.count('\t') <= indent_level:
+					break
+			found_module = False
+			found_impl = False
+			newlines += find_conditional(lines[i+1:i + j])
+			i += j
+		else:
+			newlines.append(lines[i])
+			i += 1
+
 	return newlines
 
 def replace_assignments(lines):
