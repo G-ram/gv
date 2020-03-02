@@ -8,11 +8,10 @@ class module(object):
 		self.ports = []
 		self.declarations = []
 		self.blocks = []
+		self.instantiations = []
 		self.registers = []
 		self.name = self.__class__.__name__
 		elaborate.ELABORATE.module(self)
-		self.__impl__()
-		elaborate.ELABORATE.endmodule()
 
 	def __impl__(self):
 		raise NotImplementedError()
@@ -47,6 +46,9 @@ class module(object):
 		f.writenl('always_comb')
 		for b in self.blocks:
 			f.writenl(b.__repr__())
+
+		for i in self.instantiations:
+			f.writenl(i.__repr__())
 
 		for r in self.registers:
 			f.writenl(r.__repr__())

@@ -104,6 +104,16 @@ class cond_stmt(object):
 			f.write(self.else_block.__repr__())
 		return s.getvalue()
 
+class inst_stmt(object):
+	inst_count = 0
+	def __init__(self, module):
+		self.module = module
+		self.name = 'inst%d' % inst_stmt.inst_count
+		inst_stmt.inst_count += 1
+
+	def __repr__(self):
+		return '%s %s();' % (self.module.name, self.name)
+
 class block_stmt(object):
 	def __init__(self, *args):
 		self.stmts = [stmt for stmt in args]

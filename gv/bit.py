@@ -6,7 +6,7 @@ class bit(object):
 		self.w = width
 		self.value = value
 		self.name = name
-		if self.name is None:
+		if self.name is None and self.value is None:
 			self.name = 'v%d' % bit.var_count
 			bit.var_count += 1
 		self.dxn = None

@@ -18,6 +18,7 @@ class Struct(bit.bit):
 		elaborate.ELABORATE.declare(self)
 		self.w = sum(map(lambda x: x.width(), self.members))
 		self.dimensions = [self.w]
+		self.dxn = None
 
 	def width(self):
 		self.w = sum(map(lambda x: x.width(), self.members))
@@ -32,7 +33,7 @@ class Struct(bit.bit):
 	def __define_repr__(self):
 		s = StringIO()
 		f = stream.stream(s)
-		f.writenl('typdef struct packed {')
+		f.writenl('typedef struct packed {')
 		f.indent()
 		for member in self.members:
 			f.writenl(member.__declare_repr__())	
