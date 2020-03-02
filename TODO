@@ -1,3 +1,2 @@
 1. Module instance connections
-2. Parameterized struct, union, module 
-	- Should generate a unique struct, union, module for each parameterized version
+2. Dump into separate files

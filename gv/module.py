@@ -10,8 +10,10 @@ class module(object):
 		self.blocks = []
 		self.instantiations = []
 		self.registers = []
-		self.name = self.__class__.__name__
 		elaborate.ELABORATE.module(self)
+
+	def name(self):
+		return self.__class__.__name__
 
 	def __impl__(self):
 		raise NotImplementedError()
@@ -19,7 +21,7 @@ class module(object):
 	def __repr__(self):
 		s = StringIO()
 		f = stream.stream(s)
-		f.writenl('module %s(' % self.name)
+		f.writenl('module %s(' % self.name())
 		f.indent()
 		ports = []
 		prev_port = False
@@ -53,5 +55,5 @@ class module(object):
 		for r in self.registers:
 			f.writenl(r.__repr__())
 
-		f.writenl('endmodule : %s' % self.name)
+		f.writenl('endmodule : %s' % self.name())
 		return s.getvalue()

@@ -112,7 +112,7 @@ class inst_stmt(object):
 		inst_stmt.inst_count += 1
 
 	def __repr__(self):
-		return '%s %s();' % (self.module.name, self.name)
+		return '%s %s();' % (self.module.name(), self.name)
 
 class block_stmt(object):
 	def __init__(self, *args):

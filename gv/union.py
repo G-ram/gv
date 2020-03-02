@@ -6,7 +6,6 @@ import elaborate
 class union(bit.bit):
 	def __init__(self, value=None, name=None):
 		self.value = value
-		self.type_name = self.__class__.__name__ 
 		elaborate.ELABORATE.typedef(self)
 		self.__impl__()
 		self.members = elaborate.ELABORATE.endtypedef(self)
@@ -24,6 +23,9 @@ class union(bit.bit):
 		self.w = max(map(lambda x: x.width(), self.members))
 		return self.w
 
+	def type_name(self):
+		return self.__class__.__name__ 
+
 	def __impl__(self):
 		raise NotImplementedError()
 
@@ -38,5 +40,5 @@ class union(bit.bit):
 		for member in self.members:
 			f.writenl(member.__declare_repr__())	
 		f.unindent()
-		f.writenl('} %s;' % self.type_name)
+		f.writenl('} %s;' % self.type_name())
 		return s.getvalue()

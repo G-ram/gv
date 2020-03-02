@@ -17,9 +17,9 @@ class elaborate(object):
 			s.blank()
 
 	def module(self, m):
-		if m.name not in self.modules.keys() and not self.elaborating_module:
+		if m.name() not in self.modules.keys() and not self.elaborating_module:
 			self.elaborating_module = True
-			self.modules[m.name] = m
+			self.modules[m.name()] = m
 			self.cmodule = m
 			self.blocks = []
 			self.members = []
@@ -42,14 +42,14 @@ class elaborate(object):
 		self.disable_declare -= 1
 
 	def typedef(self, t):
-		if t.type_name in self.cmodule.types.keys():
+		if t.type_name() in self.cmodule.types.keys():
 			return
 		self.disable_declare += 1
 
 	def endtypedef(self, t):
-		if t.type_name in self.cmodule.types.keys():
-			return self.cmodule.types[t.type_name].members
-		self.cmodule.types[t.type_name] = t
+		if t.type_name() in self.cmodule.types.keys():
+			return self.cmodule.types[t.type_name()].members
+		self.cmodule.types[t.type_name()] = t
 		self.disable_declare -= 1
 		members = [member for member in self.members]
 		self.members = []
