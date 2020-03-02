@@ -10,14 +10,14 @@ class block_t(UNION):
 		super().__init__(value)
 
 	def impl(self):
-		w = BIT(256)
-		b = BIT(32)(8)
+		self.w = BIT(256)
+		self.b = BIT(32)(8)
 
 class test(MODULE):
 	def impl(self):
-		i = INPUT(block_t())
-		o = INPUT(block_t())
-		o = i | 0b1110
+		self.i = INPUT(block_t())
+		self.o = INPUT(block_t())
+		self.o = self.i | 0b1110
 
 class top(MODULE):
 	def __init__(self):

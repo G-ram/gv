@@ -7,22 +7,34 @@ class Type(bit.bit):
 	class metadata(object):
 		def __init__(self):
 			self.members = []
+			self.ref = None
 
 	def __init__(self, value=None, name=None):
-		elaborate.ELABORATE.typedef(self)
-		self.impl()
 		self._gvit = Type.metadata()
+		self._gvit.ref = self
+		ref = elaborate.ELABORATE.typedef(self)
+		if ref is None:
+			self.impl()
+		else:
+			self._gvit.ref = ref
 		self._gvit.members = elaborate.ELABORATE.endtypedef(self)	
 		super().__init__(self.width(), value, name)
+
+	def __getattr__(self, v):
+		print('Type dot_access', v)
+		return None
+
+	def ref(self):
+		return self._gvit.ref
 
 	def typename(self):
 		return self.__class__.__name__
 
 	def members(self):
-		return self._gvit.members
+		return self.ref()._gvit.members
 
 	def set_members(self, *args):
-		self._gvit.members = [a for a in args]
+		self.ref()._gvit.members = [a for a in args]
 
 	def __repr__(self):
 		return self.name()
@@ -45,6 +57,7 @@ class union(Type):
 		f.indent()
 		for line in super().__define_repr__().splitlines():
 			f.writenl(line)	
+		f.unindent()
 		f.writenl('} %s;' % self.typename())
 		return s.getvalue()	
 
@@ -59,5 +72,6 @@ class Struct(Type):
 		f.indent()
 		for line in super().__define_repr__().splitlines():
 			f.writenl(line)	
+		f.unindent()
 		f.writenl('} %s;' % self.typename())
 		return s.getvalue()	

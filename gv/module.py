@@ -53,8 +53,12 @@ class module(object):
 		raise NotImplementedError()
 
 	def __getattr__(self, v):
-		# print('CALLED', v)
-		return None
+		print('Module dot access', v)
+		for decl in self.decls():
+			print(self.name(), decl.dxn(), decl.name(), v)
+			if decl.dxn() and decl.name() == v:
+				return decl
+		raise AttributeError 
 
 	def __repr__(self):
 		s = StringIO()

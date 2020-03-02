@@ -15,11 +15,13 @@ class bit(object):
 		self._gvi.width = width
 		self._gvi.value = value
 		self._gvi.name = name
-		if self._gvi.name is None and self.const():
+		if self._gvi.name is None and not self.const():
 			self._gvi.name = 'gv%d' % bit.var_count
 			bit.var_count += 1
 		self._gvi.dxn = None
 		self._gvi.dim = [self.width()]
+		if self.const():
+			return
 		elaborate.ELABORATE.declare(self)
 
 	def const(self):
