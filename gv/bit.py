@@ -2,45 +2,93 @@ import elaborate
 
 class bit(object):
 	var_count = 0
+	class metadata(object):
+		def __init__(self):
+			self.width = None
+			self.value = None
+			self.name = None
+			self.dxn = None
+			self.dim = None
+
 	def __init__(self, width=1, value=None, name=None):
-		self.w = width
-		self.value = value
-		self.name = name
-		if self.name is None and self.value is None:
-			self.name = 'v%d' % bit.var_count
+		self._gvi = bit.metadata()
+		self._gvi.width = width
+		self._gvi.value = value
+		self._gvi.name = name
+		if self._gvi.name is None and self.const():
+			self._gvi.name = 'gv%d' % bit.var_count
 			bit.var_count += 1
-		self.dxn = None
-		self.dimensions = [width]
+		self._gvi.dxn = None
+		self._gvi.dim = [self.width()]
 		elaborate.ELABORATE.declare(self)
 
 	def const(self):
-		return self.value is not None
+		return self._gvi.value is not None
 
 	def width(self):
-		return self.w
+		return self._gvi.width
+
+	def set_width(self, width):
+		self._gvi.width = width
+
+	def dim(self):
+		return self._gvi.dim
+
+	def set_dim(self, *args):
+		self._gvi.dim = [a for a in args]
+
+	def append_dim(self, dim):
+		self._gvi.dim.append(dim)
+
+	def name(self):
+		return self._gvi.name
+
+	def value(self):
+		return self._gvi.value
+
+	def set_value(self, value):
+		self._gvi.dxn = value
+
+	def dxn(self):
+		return self._gvi.dxn
+
+	def set_dxn(self, dxn):
+		self._gvi.dxn = dxn
 
 	def __call__(self, width):
-		self.w *= width
-		self.dimensions.append(width)
+		self.set_width(self.width() * width)
+		self.append_dim(width)
 		return self
 
 	def __declare_repr__(self):
 		rep = ''
-		if self.dxn == 1:
+		dxn = self.dxn()
+		if dxn == 1:
 			rep = 'output '
-		elif self.dxn == 0:
+		elif dxn == 0:
 			rep = 'input '
 		rep += 'logic '
 
-		for d in self.dimensions:
+		for d in self.dim():
 			rep += '[%d:0]' % (d - 1)
-		rep += ' %s;' % self.name
+		rep += ' %s;' % self.name()
 		return rep
 
+	def __declare_cxn_repr__(self):
+		rep = 'logic '
+
+		for d in self.dim():
+			rep += '[%d:0]' % (d - 1)
+		rep += ' %s;' % self.name()
+		return rep
+
+	def __cxn_repr__(self):
+		return '.%s(%s)' % (self.name(), self.name())
+
 	def __repr__(self):
-		if self.value is not None:
-			return "%d'd%d" % (self.w, self.value)
-		return self.name
+		if self.value() is not None:
+			return "%d'd%d" % (self.width(), self.value())
+		return self.name()
 
 	# Helper functions
 	def __conv(width, operand):
@@ -52,93 +100,99 @@ class bit(object):
 
 	def __make_bin_op(op1, op2, operator):
 		if op1.const() and op2.const():
-			return bit(min(op1.width(), op2.width()), eval('op1.value%sop2.value' % operator))
-		return bin_op(op1, op2, operator)
+			return bit(min(op1.width(), op2.width()), eval('op1.value()%sop2.value()' % operator))
+		import expr
+		return expr.bin_op(op1, op2, operator)
 
 	def __make_unary_op(op, operator):
 		if op.const():
-			return bit(op.width, eval('%sop.value' % operator))
-		return unary_op(op, operator)
+			return bit(op.width, eval('%sop.value()' % operator))
+		import expr
+		return expr.unary_op(op, operator)
 
-	def __make_get_expr(op, low, high=None):
-		return get_expr(op, low, high)
+	def __make_bracket_expr(op, low, high=None):
+		import expr
+		return expr.bracket_expr(op, low, high)
 
 	# Overloads
 	def __getitem__(self, key):
 		if isinstance(key, slice):
-			s = bit.__conv(self.w, key.start)
-			e = bit.__conv(self.w, key.stop)
+			s = bit.__conv(self.width(), key.start)
+			e = bit.__conv(self.width(), key.stop)
+
+			def get_idx(v):
+				return v.value() if v.value() >= 0 else self.width() - v.value()
 
 			if self.const() and s.const() and e.const():
-				start = s.value if s.value >= 0 else self.w - s.value
-				stop = e.value if e.value >= 0 else self.w - e.value
-				value = self.value >> start & ((1 << stop) - 1)
+				start = get_idx(s)
+				stop = get_idx(e)
+				value = self.value() >> start & ((1 << stop) - 1)
 				return bit(stop - start, value)
 
 			if s.const() and e.const():
-				start = s.value if s.value >= 0 else self.w - s.value
-				stop = e.value if e.value >= 0 else self.w - e.value
-				return bit.__make_get_expr(self, start, stop)
+				start = get_idx(s)
+				stop = get_idx(e)
+				return bit.__make_bracket_expr(self, start, stop)
 
 			if e.const():
-				stop = e.value if e.value >= 0 else self.w - e.value
-				return bit.__make_get_expr(self, s, stop)
+				stop = get_idx(e)
+				return bit.__make_bracket_expr(self, s, stop)
 
-		s = bit.__conv(self.w, key)
+		s = bit.__conv(self.width(), key)
 		if self.const() & s.const():
-			start = s.value if s.value >= 0 else self.w - s.value
-			return bit(1, (self.value >> start) & 0x1)
+			start = get_idx(s)
+			return bit(1, (self.value() >> start) & 0x1)
 
 		if s.const():
-			start = s.value if s.value >= 0 else self.w - s.value
-			return bit.__make_get_expr(self, start)
+			start = get_idx(s)
+			return bit.__make_bracket_expr(self, start)
 
-		return bit.__make_get_expr(self, s, None)
+		return bit.__make_bracket_expr(self, s, None)
 
 	def __add__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '+')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '+')
 
 	def __radd__(self, other):
 		return self.__add__(other)
 
 	def __sub__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '-')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '-')
 
 	def __rsub__(self, other):
-		return bit.__make_bin_op(bit.__conv(self.w, other), self, '-')
+		return bit.__make_bin_op(bit.__conv(self.width(), other), self, '-')
 
 	def __mul__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '*')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '*')
 
 	def __rmul__(self, other):
 		return self.__mul__(other)
 
 	def __lshift__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '<<')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '<<')
 
 	def __rlshift__(self, other):
-		return bit.__make_bin_op(bit.__conv(self.w, other), self, '<<')
+		return bit.__make_bin_op(bit.__conv(self.width(), other), self, '<<')
 
 	def __rshift__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '>>')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '>>')
 
 	def __rrshift__(self, other):
-		return bit.__make_bin_op(bit.__conv(self.w, other), self, '>>')
+		return bit.__make_bin_op(bit.__conv(self.width(), other), self, '>>')
 
 	def __or__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '|')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '|')
 
 	def __ror__(self, other):
 		return self.__or__(other)
 
 	def __xor__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '^')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '^')
 
 	def __rxor__(self, other):
 		return self.__xor__(other)
 
 	def __and__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '&')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '&')
 
 	def __rand__(self, other):
 		return self.__and__(other)
@@ -156,85 +210,27 @@ class bit(object):
 		return bit.__make_unary_op(self, '&')
 
 	def __lt__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '<')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '<')
 
 	def __gt__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '>')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '>')
 
 	def __le__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '<=')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '<=')
 
 	def __ge__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '>=')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '>=')
 
 	def __eq__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '==')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '==')
 
 	def __ne__(self, other):
-		return bit.__make_bin_op(self, bit.__conv(self.w, other), '!=')
+		return bit.__make_bin_op(self, bit.__conv(self.width(), other), '!=')
 
-class bin_op(bit):
-	def __init__(self, op1, op2, operator):
-		self.operator = operator
-		self.op1 = op1
-		self.op2 = op2
-		self.w = min(op1.width(), op2.width())
-		self.value = None
+def output(handle):
+	handle.set_dxn(1)
+	return handle
 
-	def __repr__(self):
-		return '(%s%s%s)' % (
-			self.op1.__repr__(), self.operator, self.op2.__repr__())
-
-class unary_op(bit):
-	def __init__(self, op, operator):
-		self.operator = operator
-		self.op = op
-		self.w = op.width()
-		self.value = None
-
-	def __repr__(self):
-		return '(%s%s)' % (str(self.operator.__repr__()), self.op.__repr__())
-
-class list_op(bit):
-	def __init__(self, *args):
-		self.ops = [op for op in args]
-		self.w = sum(map(lambda x: x.width, self.ops))
-		self.value = None
-
-	def __repr__(self):
-		rep = '{'
-		for op in self.op:
-			rep += '%s,' % op.__repr__()
-		return '%s}' % rep[-1]
-
-class get_expr(bit):
-	def __init__(self, op, low, high):
-		self.op = op
-		self.low = low
-		self.high = high
-		self.w = 1
-		self.value = None
-		if high is not None:
-			self.w = high - low
-
-	def __repr__(self):
-		if self.high is None:
-			return '(%s[%s])' % (self.op.__repr__(), self.low.__repr__())
-		return '(%s[%s:%s])' % (
-			self.op.__repr__(), self.high.__repr__(), self.low.__repr__())
-
-class assign_expr(bit):
-	def __init__(self, dest, src):
-		self.dest = dest
-		self.src = src
-		self.w = dest.width()
-		self.value = src.value
-
-	def __repr__(self):
-		return '%s = %s' % (self.dest.__repr__(), self.src.__repr__())
-
-def concat(*args):
-	return list_op(args)
-
-def ternary(condition, expr1, expr2):
-	pass
+def input(handle):
+	handle.set_dxn(0)
+	return handle

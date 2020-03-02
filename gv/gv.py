@@ -73,7 +73,7 @@ def replace_conditionals(lines):
 			found_module = False
 			found_impl = False
 
-		if found_module and '__impl__' in lines[i]:
+		if found_module and 'impl' in lines[i]:
 			indent_level = lines[i].count('\t')
 			found_impl = True
 
@@ -107,7 +107,7 @@ def replace_assignments(lines):
 			found_module = False
 			found_impl = False
 
-		if found_module and '__impl__' in line:
+		if found_module and 'impl' in line:
 			found_impl = True
 
 		if found_module and found_impl:

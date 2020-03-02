@@ -12,25 +12,25 @@ class reg(object):
 			self.name = 'r%d' % var_count
 			var_count += 1
 		self.rst_value = rst_value
-		self.w = width
+		self._width = width
 		elaborate.ELABORATE.reg(self)
-		self.__impl__()
+		self.impl()
 		elaborate.ELABORATE.endreg()
 
-	def __impl__(self):
+	def impl(self):
 		self.clk = bit.bit(1)
 		self.rst_l = bit.bit(1)
 		self.en = bit.bit(1)
 		self.clear = bit.bit(1)
-		self.D = bit.bit(self.w)
-		self.Q = bit.bit(self.w)
+		self.D = bit.bit(self._width)
+		self.Q = bit.bit(self._width)
 
 	def __repr__(self):
 		s = StringIO()
 		f = stream.stream(s)
-		f.write('register #(%d' % self.w)
+		f.write('register #(%d' % self._width)
 		if self.rst_value is not None:
-			f.write(", 'd%d" % (self.w, self.rst_value))
+			f.write(", 'd%d" % (self._width, self.rst_value))
 		f.write(') (.clk, .rst_l,\n')
 		f.indent()
 		f.writenl('.en(%s)' % self.en.__repr__())

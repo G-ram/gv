@@ -2,16 +2,18 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bit import bit, concat, ternary
+from bit import bit, input, output
 from reg import reg
-from Struct import Struct
-from union import union
 from module import module
-from port import input, output
-from statement import cond, connect
-from helpers import exists
+from Type import Struct, union
+from stmt import cond, connect
 from stream import stream
 from elaborate import ELABORATE
+
+def exists(name, loc1, loc2={}):
+	if type(loc1) is not dict:
+		return hasattr(loc1, name)
+	return (name in loc1.keys()) or (name in loc2.keys())
 
 BIT = bit
 REG = reg
@@ -20,8 +22,6 @@ UNION = union
 MODULE = module
 INPUT = input
 OUTPUT = output
-CONCAT = concat
 COND = cond
-TERNARY = ternary
 EXISTS = exists
 CONNECT = connect

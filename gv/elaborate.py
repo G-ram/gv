@@ -1,15 +1,20 @@
-import statement
+import stmt
 
 class elaborate(object):
+	class metadata(object):
+		def __init__(self):
+			self.module = None
+			self.blocks = None
+			self.disable_declare = None
+
 	def __init__(self):
 		self.modules = {}
-		self.cmodule = None
 		self.blocks = []
+		self.cmodule = None
 		self.cblock = None
 		self.disable_declare = 0
 		self.members = []
-		self.elaborating_module = False
-		self.need_to_elaborate = []
+		self.finish_elaborate = []
 
 	def dump(self, s):
 		for key in self.modules:
@@ -17,22 +22,45 @@ class elaborate(object):
 			s.blank()
 
 	def module(self, m):
-		if m.name() not in self.modules.keys() and not self.elaborating_module:
-			self.elaborating_module = True
+		if m.name() not in self.modules.keys():
 			self.modules[m.name()] = m
+
+		if self.cmodule is not None:
+			self.cmodule.append_inst(stmt.inst_stmt(m))
+
+			# Save blocks, disable_declare
+			metadata = elaborate.metadata()
+			metadata.disable_declare = self.disable_declare
+			metadata.module = self.cmodule
+			metadata.blocks = [block for block in self.blocks]
+			self.finish_elaborate.append(metadata)
+
+			# Start elaboration
+			self.blocks = []
+			self.members = []
+			self.disable_declare = 0
+			self.cmodule = m
+			self.cmodule.append_block(stmt.block_stmt())
+			self.blocks.append(self.cmodule.blocks()[-1])
+			self.cblock = self.blocks[-1]
+			self.cmodule.impl()
+			self.endmodule()
+		else:
 			self.cmodule = m
 			self.blocks = []
 			self.members = []
-			self.cmodule.blocks.append(statement.block_stmt())
-			self.blocks.append(self.cmodule.blocks[-1])
+			self.cmodule.append_block(stmt.block_stmt())
+			self.blocks.append(self.cmodule.blocks()[-1])
 			self.cblock = self.blocks[-1]
-			self.cmodule.__impl__()
-			self.elaborating_module = False
-			if len(self.need_to_elaborate) > 0:
-				self.module(self.need_to_elaborate.pop(0))
-		else:
-			self.cmodule.instantiations.append(statement.inst_stmt(m))
-			self.need_to_elaborate.append(m)
+			self.cmodule.impl()
+
+	def endmodule(self):
+		if len(self.finish_elaborate) > 0:
+			metadata = self.finish_elaborate.pop()
+			self.blocks = metadata.blocks
+			self.cmodule = metadata.module
+			self.disable_declare = metadata.disable_declare
+			self.cblock = self.blocks[-1]
 
 	def reg(self, r):
 		self.cmodule.registers.append(r)
@@ -42,21 +70,19 @@ class elaborate(object):
 		self.disable_declare -= 1
 
 	def typedef(self, t):
-		if t.type_name() in self.cmodule.types.keys():
-			return
 		self.disable_declare += 1
 
 	def endtypedef(self, t):
-		if t.type_name() in self.cmodule.types.keys():
-			return self.cmodule.types[t.type_name()].members
-		self.cmodule.types[t.type_name()] = t
 		self.disable_declare -= 1
+		if t.typename() in self.cmodule.types().keys():
+			return self.cmodule.types()[t.typename()].members()
+		self.cmodule.append_type(t)
 		members = [member for member in self.members]
 		self.members = []
 		return members
 
 	def block(self):
-		self.blocks.append(statement.block_stmt())
+		self.blocks.append(stmt.block_stmt())
 		self.cblock = self.blocks[-1]
 
 	def endblock(self):
@@ -65,11 +91,11 @@ class elaborate(object):
 		return self.blocks.pop()
 
 	def stmt(self, s):
-		self.cblock.append(s)
+		self.cblock.append_stmt(s)
 
 	def declare(self, d):
 		if self.disable_declare == 0:
-			self.cmodule.declarations.append(d)
+			self.cmodule.append_decl(d)
 			return
 		self.members.append(d)
 

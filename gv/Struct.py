@@ -7,27 +7,30 @@ class Struct(bit.bit):
 	def __init__(self, value=None, name=None):
 		self.value = value
 		elaborate.ELABORATE.typedef(self)
-		self.__impl__()
+		self.impl()
 		self.members = elaborate.ELABORATE.endtypedef(self)
 		self.name = name
 		if self.name is None:
-			self.name = 'v%d' % bit.bit.var_count
+			self.name = 'gv%d' % bit.bit.var_count
 			bit.bit.var_count +=1
 
 		elaborate.ELABORATE.declare(self)
-		self.w = sum(map(lambda x: x.width(), self.members))
-		self.dimensions = [self.w]
-		self.dxn = None
+		self._width = sum(map(lambda x: x.width(), self.members))
+		self._dim = [self._width]
+		self._dxn = None
 
 	def width(self):
-		self.w = sum(map(lambda x: x.width(), self.members))
-		return self.w
+		self._width = sum(map(lambda x: x.width(), self.members))
+		return self._width
 
-	def type_name(self):
-		return self.__class__.__name__ 
+	def typename(self):
+		return self.__class__.name 
 
-	def __impl__(self):
+	def impl(self):
 		raise NotImplementedError()
+
+	def __getattr__(self):
+		pass
 
 	def __repr__(self):
 		return self.name
@@ -40,5 +43,5 @@ class Struct(bit.bit):
 		for member in self.members:
 			f.writenl(member.__declare_repr__())	
 		f.unindent()
-		f.writenl('} %s;' % self.type_name())
+		f.writenl('} %s;' % self.typename())
 		return s.getvalue()
