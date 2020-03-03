@@ -22,12 +22,16 @@ class elaborate(object):
 			s.blank()
 
 	def module(self, m):
-		if m.name() not in self.modules.keys():
-			self.modules[m.name()] = m
-
 		if self.cmodule is not None:
 			self.cmodule.append_inst(stmt.inst_stmt(m))
 
+		if m.name() in self.modules.keys():
+			return self.modules[m.name()]
+
+		return None
+
+	def endmodule(self, m):
+		if self.cmodule is not None:
 			# Save blocks, disable_declare
 			metadata = elaborate.metadata()
 			metadata.disable_declare = self.disable_declare
@@ -39,28 +43,29 @@ class elaborate(object):
 			self.blocks = []
 			self.members = []
 			self.disable_declare = 0
+			self.modules[m.name()] = m
 			self.cmodule = m
-			self.cmodule.append_block(stmt.block_stmt())
-			self.blocks.append(self.cmodule.blocks()[-1])
-			self.cblock = self.blocks[-1]
-			self.cmodule.impl()
-			self.endmodule()
-		else:
-			self.cmodule = m
-			self.blocks = []
-			self.members = []
 			self.cmodule.append_block(stmt.block_stmt())
 			self.blocks.append(self.cmodule.blocks()[-1])
 			self.cblock = self.blocks[-1]
 			self.cmodule.impl()
 
-	def endmodule(self):
-		if len(self.finish_elaborate) > 0:
-			metadata = self.finish_elaborate.pop()
-			self.blocks = metadata.blocks
-			self.cmodule = metadata.module
-			self.disable_declare = metadata.disable_declare
+			# Finish other modules
+			if len(self.finish_elaborate) > 0:
+				metadata = self.finish_elaborate.pop()
+				self.blocks = metadata.blocks
+				self.cmodule = metadata.module
+				self.disable_declare = metadata.disable_declare
+				self.cblock = self.blocks[-1]
+		else:
+			self.cmodule = m
+			self.blocks = []
+			self.members = []
+			self.modules[m.name()] = m
+			self.cmodule.append_block(stmt.block_stmt())
+			self.blocks.append(self.cmodule.blocks()[-1])
 			self.cblock = self.blocks[-1]
+			self.cmodule.impl()
 
 	def reg(self, r):
 		self.cmodule.registers.append(r)
@@ -71,8 +76,9 @@ class elaborate(object):
 
 	def typedef(self, t):
 		self.disable_declare += 1
-		if t.typename() in self.cmodule.types().keys():
-			return self.cmodule.types()[t.typename()]
+		if t in self.cmodule.types().keys():
+			self.disable_declare -= 0
+			return self.cmodule.types()[t]
 		return None
 
 	def endtypedef(self, t):
@@ -97,7 +103,8 @@ class elaborate(object):
 		self.cblock.append_stmt(s)
 
 	def declare(self, d):
-		if self.disable_declare == 0:
+		if self.disable_declare == 0 and \
+			d.name() not in self.cmodule.decls().keys():
 			self.cmodule.append_decl(d)
 			return
 		self.members.append(d)

@@ -24,24 +24,24 @@ class top(MODULE):
 		super().__init__()
 
 	def impl(self):
-		a = INPUT(block_t())
-		b = INPUT(BIT(32)(8))
-		c = OUTPUT(BIT(4))
-		c = a[0:1] & b[0:1]
+		self.a = INPUT(block_t())
+		self.b = INPUT(BIT(32)(8))
+		self.c = OUTPUT(BIT(4))
+		self.c = self.a[0:1] & self.b[0:1]
 		l = block_t()
 
 		test_inst = test()
-		test_inst.i = c
+		test_inst.i = self.c
 		l.w = test_inst.o
 
 		test_inst2 = test()
-		test_inst2.i = c
+		test_inst2.i = self.c
 		l.w = test_inst2.o
 
-		if c == BIT(2, 3):
-			c = BIT(2, 1)
-		elif c == BIT(2, 1):
-			c = BIT(2, 0)
+		if self.c == BIT(2, 3):
+			self.c = BIT(2, 1)
+		elif self.c == BIT(2, 1):
+			self.c = BIT(2, 0)
 
 def main():
 	a = top()

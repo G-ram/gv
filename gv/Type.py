@@ -4,37 +4,41 @@ import stream
 import elaborate
 
 class Type(bit.bit):
-	class metadata(object):
-		def __init__(self):
-			self.members = []
-			self.ref = None
-
 	def __init__(self, value=None, name=None):
-		self._gvit = Type.metadata()
-		self._gvit.ref = self
-		ref = elaborate.ELABORATE.typedef(self)
-		if ref is None:
+		self._gvim = []
+		self.ref = None
+		self.ref = elaborate.ELABORATE.typedef(self.typename())
+		if self.ref is None:
 			self.impl()
-		else:
-			self._gvit.ref = ref
-		self._gvit.members = elaborate.ELABORATE.endtypedef(self)	
+			self._gvim = elaborate.ELABORATE.endtypedef(self)	
 		super().__init__(self.width(), value, name)
 
 	def __getattr__(self, v):
-		print('Type dot_access', v)
-		return None
-
-	def ref(self):
-		return self._gvit.ref
+		ref = super().__getattribute__('ref')
+		attr = None
+		if ref is not None:
+			attr = ref.__getattribute__(v)
+		else:
+			attr = super().__getattribute__(v)
+		if v != 'ref' and isinstance(attr, bit.bit):
+			import expr
+			return expr.dot_expr(self, attr)
+		return attr
 
 	def typename(self):
+		if self.ref is not None:
+			return self.ref.typename()
 		return self.__class__.__name__
 
 	def members(self):
-		return self.ref()._gvit.members
+		if self.ref is not None:
+			return self.ref._gvim
+		return self._gvim
 
 	def set_members(self, *args):
-		self.ref()._gvit.members = [a for a in args]
+		if self.ref is not None:
+			self.ref._gvim = [a for a in args]
+		self._gvim = [a for a in args]
 
 	def __repr__(self):
 		return self.name()
@@ -48,6 +52,8 @@ class Type(bit.bit):
 
 class union(Type):
 	def width(self):
+		if len(self.members()) == 0:
+			raise ValueError
 		return max(map(lambda x: x.width(), self.members())) 
 
 	def __define_repr__(self):
@@ -63,6 +69,8 @@ class union(Type):
 
 class Struct(Type):
 	def width(self):
+		if len(self.members()) == 0:
+			raise ValueError
 		return sum(map(lambda x: x.width(), self.members())) 
 
 	def __define_repr__(self):

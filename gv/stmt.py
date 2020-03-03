@@ -67,18 +67,18 @@ class cond_stmt(stmt):
 			for elif_cond, elif_block in zip(elif_conds, elif_blocks):
 				f.writenl('%selse if%s' % (
 					indent_level * '\t', elif_cond.__repr__()))
-				f.write(elif_blocks.__repr__())
+				f.write(elif_block.__repr__())
 			if self.else_block() is not None:
 				f.writenl('%selse' % (indent_level * '\t'))
 				f.write(self.else_block().__repr__())
-		elif len(elif_conds > 0):
+		elif len(elif_conds) > 0:
 			f.writenl('%sif(%s) ' % (
 				indent_level * '\t', elif_conds[0].__repr__()))
 			f.write(elif_blocks[0].__repr__())
 			for elif_cond, elif_block in zip(elif_conds[1:], elif_blocks[1:]):
 				f.writenl('%selse if%s' % (
 					indent_level * '\t', elif_cond.__repr__()))
-				f.write(elif_blocks.__repr__())
+				f.write(elif_block.__repr__())
 			if self.else_block() is not None:
 				f.writenl('%selse' % (indent_level * '\t'))
 				f.write(self.else_block().__repr__())
@@ -127,7 +127,9 @@ class inst_stmt(stmt):
 		f.write('%s %s(' % (self.module().name(), self.name()))
 		more_than_one = False
 		indented = False
-		for p in self.module().decls():
+		decls = self.module().decls()
+		for k in decls:
+			p = decls[k]
 			if p.dxn() is not None:
 				if more_than_one:
 					f.writenl(',')

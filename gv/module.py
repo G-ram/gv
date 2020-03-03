@@ -1,64 +1,93 @@
 from io import StringIO
 import stream
 import elaborate
+import bit
 
 class module(object):
 	class metadata(object):
 		def __init__(self):
 			self.name = None
 			self.types = {}
-			self.decls = []
+			self.decls = {}
 			self.blocks = []
 			self.insts = []
 			self.regs = []
 
 	def __init__(self):
 		self._gvim = module.metadata()
-		elaborate.ELABORATE.module(self)
+		self.ref = None
+		self.ref = elaborate.ELABORATE.module(self)
+		if self.ref is None:
+			elaborate.ELABORATE.endmodule(self)
 
 	def name(self):
+		if self.ref is not None:
+			return self.ref.name()
 		return self.__class__.__name__
 
 	def types(self):
+		if self.ref is not None:
+			return self.ref.types()
 		return self._gvim.types
 
 	def append_type(self, t):
+		if self.ref is not None:
+			self.ref.append_type(t)
 		self._gvim.types[t.typename()] = t
 
 	def decls(self):
+		if self.ref is not None:
+			return self.ref.decls()
 		return self._gvim.decls
 
 	def append_decl(self, decl):
-		self._gvim.decls.append(decl)
+		if self.ref is not None:
+			self.ref.append_dec(decl)
+		self._gvim.decls[decl.name()] = decl
 
 	def blocks(self):
+		if self.ref is not None:
+			return self.ref.blocks()
 		return self._gvim.blocks
 
 	def append_block(self, block):
+		if self.ref is not None:
+			self.ref.append_block(block)
 		self._gvim.blocks.append(block)
 
 	def insts(self):
+		if self.ref is not None:
+			return self.ref.insts()
 		return self._gvim.insts
 
 	def append_inst(self, inst):
+		if self.ref is not None:
+			return self.ref.append_inst(inst)
 		self._gvim.insts.append(inst)
 
 	def regs(self):
+		if self.ref is not None:
+			return self.ref.regs()
 		return self._gvim.regs
 
 	def append_reg(self, reg):
+		if self.ref is not None:
+			self.ref.append_reg(reg)
 		self._gvim.regs.append(reg)
 
 	def impl(self):
 		raise NotImplementedError()
 
 	def __getattr__(self, v):
-		print('Module dot access', v)
-		for decl in self.decls():
-			print(self.name(), decl.dxn(), decl.name(), v)
-			if decl.dxn() and decl.name() == v:
-				return decl
-		raise AttributeError 
+		ref = super().__getattribute__('ref')
+		attr = None
+		if ref is not None:
+			attr = ref.__getattribute__(v)
+		else:
+			attr = super().__getattribute__(v)
+		if v != 'ref' and isinstance(attr, bit.bit):
+			pass
+		return attr
 
 	def __repr__(self):
 		s = StringIO()
@@ -67,7 +96,9 @@ class module(object):
 		f.indent()
 		ports = []
 		prev_port = False
-		for p in self.decls():
+		decls = self.decls()
+		for k in decls:
+			p = decls[k]
 			if p.dxn() is not None:
 				if prev_port:
 					f.unindent()
@@ -83,12 +114,16 @@ class module(object):
 		for k in self.types():
 			f.writenl(self.types()[k].__define_repr__())
 
-		for d in self.decls():
-			if d.__repr__() not in ports and not d.const():
-				f.writenl(d.__declare_repr__())
+		decls = self.decls()
+		for k in decls:
+			p = decls[k]
+			if p.__repr__() not in ports and not p.const():
+				f.writenl(p.__declare_repr__())
 
 		for i in self.insts():
-			for p in i.module().decls():
+			decls = i.module().decls()
+			for k in decls:
+				p = decls[k]
 				if p.dxn() is not None:
 					f.writenl(p.__declare_cxn_repr__())
 		f.blank()

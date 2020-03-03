@@ -1,6 +1,13 @@
 import bit
 
-class bin_op(bit.bit):
+class expr(bit.bit):
+	def __init__(self, width, value, name):
+		super().__init__(width, value, name)
+
+	def compound(self):
+		return True
+
+class bin_op(expr):
 	def __init__(self, op1, op2, operator):
 		self.operator = operator
 		self.op1 = op1
@@ -11,7 +18,7 @@ class bin_op(bit.bit):
 		return '(%s %s %s)' % (
 			self.op1.__repr__(), self.operator, self.op2.__repr__())
 
-class unary_op(bit.bit):
+class unary_op(expr):
 	def __init__(self, op, operator):
 		self.operator = operator
 		self.op = op
@@ -21,7 +28,7 @@ class unary_op(bit.bit):
 	def __repr__(self):
 		return '(%s%s)' % (str(self.operator.__repr__()), self.op.__repr__())
 
-class list_op(bit.bit):
+class list_op(expr):
 	def __init__(self, *args):
 		self.ops = [op for op in args]
 		self.value = None
@@ -33,7 +40,7 @@ class list_op(bit.bit):
 			rep += '%s,' % op.__repr__()
 		return '%s}' % rep[-1]
 
-class bracket_expr(bit.bit):
+class bracket_expr(expr):
 	def __init__(self, op, low, high):
 		self.op = op
 		self.low = low
@@ -47,7 +54,7 @@ class bracket_expr(bit.bit):
 		return '(%s[%s:%s])' % (
 			self.op.__repr__(), self.high.__repr__(), self.low.__repr__())
 
-class dot_expr(bit.bit):
+class dot_expr(expr):
 	def __init__(self, obj, mem):
 		self.obj = obj
 		self.mem = mem
@@ -56,7 +63,7 @@ class dot_expr(bit.bit):
 	def __repr__(self):
 		return '%s.%s' % (self.obj.__repr__(), self.mem.__repr__())
 
-class assign_expr(bit.bit):
+class assign_expr(expr):
 	def __init__(self, dest, src):
 		self.dest = dest
 		self.src = src

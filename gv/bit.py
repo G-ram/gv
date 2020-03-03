@@ -19,13 +19,16 @@ class bit(object):
 			self._gvi.name = 'gv%d' % bit.var_count
 			bit.var_count += 1
 		self._gvi.dxn = None
-		self._gvi.dim = [self.width()]
-		if self.const():
+		self._gvi.dim = [self._gvi.width]
+		if self.const() or self.compound():
 			return
 		elaborate.ELABORATE.declare(self)
 
 	def const(self):
 		return self._gvi.value is not None
+
+	def compound(self):
+		return False
 
 	def width(self):
 		return self._gvi.width
