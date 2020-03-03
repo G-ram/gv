@@ -77,7 +77,7 @@ class elaborate(object):
 	def typedef(self, t):
 		self.disable_declare += 1
 		if t in self.cmodule.types().keys():
-			self.disable_declare -= 0
+			self.disable_declare -= 1
 			return self.cmodule.types()[t]
 		return None
 
