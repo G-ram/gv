@@ -7,6 +7,7 @@ class bit(object):
 			self.width = None
 			self.value = None
 			self.name = None
+			self.cxnname = None
 			self.dxn = None
 			self.dim = None
 
@@ -48,6 +49,12 @@ class bit(object):
 	def name(self):
 		return self._gvi.name
 
+	def cxnname(self):
+		return self._gvi.cxnname
+
+	def set_cxnname(self, name):
+		self._gvi.cxnname = name
+
 	def value(self):
 		return self._gvi.value
 
@@ -84,11 +91,11 @@ class bit(object):
 
 		for d in self.dim():
 			rep += '[%d:0]' % (d - 1)
-		rep += ' %s;' % self.name()
+		rep += ' %s;' % self.cxnname()
 		return rep
 
 	def __cxn_repr__(self):
-		return '.%s(%s)' % (self.name(), self.name())
+		return '.%s(%s)' % (self.name(), self.cxnname())
 
 	def __repr__(self):
 		if self.value() is not None:

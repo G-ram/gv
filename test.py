@@ -16,7 +16,7 @@ class block_t(UNION):
 class test(MODULE):
 	def impl(self):
 		self.i = INPUT(block_t())
-		self.o = INPUT(block_t())
+		self.o = OUTPUT(block_t())
 		self.o = self.i | 0b1110
 
 class top(MODULE):

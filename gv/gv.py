@@ -9,6 +9,15 @@ def tostr(v):
 	if v is None: return ''
 	return v
 
+def strip_comments(lines):
+	newlines = []
+	for line in lines:
+		if '#' in line:
+			newlines.append(line[line.index('#'):])
+		else:
+			newlines.append(line)
+	return newlines
+
 def find_conditional(lines):
 	newlines = []
 	elif_count = 0
@@ -157,6 +166,7 @@ def main(args):
 	with open(args.top[0], 'r') as t:
 		lines = t.readlines()
 		lines.insert(0, 'from gv import COND, EXISTS, CONNECT\n')
+		lines = strip_comments(lines)
 		lines = replace_conditionals(lines)
 		lines = replace_assignments(lines)
 

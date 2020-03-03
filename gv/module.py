@@ -78,15 +78,18 @@ class module(object):
 	def impl(self):
 		raise NotImplementedError()
 
-	def __getattr__(self, v):
+	def __getattribute__(self, v):
 		ref = super().__getattribute__('ref')
 		attr = None
 		if ref is not None:
 			attr = ref.__getattribute__(v)
 		else:
 			attr = super().__getattribute__(v)
-		if v != 'ref' and isinstance(attr, bit.bit):
-			pass
+		if v != 'ref' and isinstance(attr, bit.bit) and \
+			type(self) != type(elaborate.ELABORATE.cmodule):
+			# dot access to module
+			# do a clone if not already cloned
+			print(v)
 		return attr
 
 	def __repr__(self):
