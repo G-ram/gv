@@ -12,7 +12,7 @@ class stream(object):
 			self.indent_level = 0
 
 	def write(self, v='', i=-1):
-		if i > 0:
+		if i >= 0:
 			self.handle.write('%s%s' % ('\t'*i, v))
 		else:
 			self.handle.write('%s%s' % ('\t'*self.indent_level, v))

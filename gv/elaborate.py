@@ -18,6 +18,7 @@ class elaborate(object):
 
 	def dump(self, s):
 		for key in self.modules:
+			self.cmodule = self.modules[key]
 			s.write(self.modules[key].__repr__())
 			s.blank()
 
@@ -31,6 +32,9 @@ class elaborate(object):
 		return None
 
 	def endmodule(self, m):
+		if m.name() in self.modules.keys():
+			return self.modules[m.name()]
+
 		if self.cmodule is not None:
 			# Save blocks, disable_declare
 			metadata = elaborate.metadata()
@@ -43,12 +47,14 @@ class elaborate(object):
 			self.blocks = []
 			self.members = []
 			self.disable_declare = 0
-			self.modules[m.name()] = m
 			self.cmodule = m
 			self.cmodule.append_block(stmt.block_stmt())
 			self.blocks.append(self.cmodule.blocks()[-1])
 			self.cblock = self.blocks[-1]
+			print('startmodule', self.cmodule.name())
 			self.cmodule.impl()
+			self.modules[m.name()] = m
+			print('endmodule', self.cmodule.name())
 
 			# Finish other modules
 			if len(self.finish_elaborate) > 0:
@@ -61,11 +67,11 @@ class elaborate(object):
 			self.cmodule = m
 			self.blocks = []
 			self.members = []
-			self.modules[m.name()] = m
 			self.cmodule.append_block(stmt.block_stmt())
 			self.blocks.append(self.cmodule.blocks()[-1])
 			self.cblock = self.blocks[-1]
 			self.cmodule.impl()
+			self.modules[m.name()] = m
 
 	def reg(self, r):
 		self.cmodule.registers.append(r)
@@ -75,16 +81,15 @@ class elaborate(object):
 		self.disable_declare -= 1
 
 	def typedef(self, t):
-		self.disable_declare += 1
 		if t in self.cmodule.types().keys():
-			self.disable_declare -= 1
 			return self.cmodule.types()[t]
+		self.disable_declare += 1
 		return None
 
 	def endtypedef(self, t):
-		self.disable_declare -= 1
 		if t.typename() in self.cmodule.types().keys():
 			return self.cmodule.types()[t.typename()].members()
+		self.disable_declare -= 1
 		self.cmodule.append_type(t)
 		members = [member for member in self.members]
 		self.members = []

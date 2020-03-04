@@ -132,7 +132,7 @@ class inst_stmt(stmt):
 			p = decls[k]
 			if p.dxn() is not None:
 				if more_than_one:
-					f.writenl(',')
+					f.writenl(',', i=0)
 					if not indented:
 						f.indent()
 						indented = True
