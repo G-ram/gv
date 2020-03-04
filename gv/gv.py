@@ -59,12 +59,12 @@ def find_conditional(lines):
 			match = re.match(r'(\t*)[^\n].*', lines[i+1])
 			if match is not None:
 				indent = 0 if match.group(1) is None else match.group(1).count('\t')
-				for j in range(indent + 1, len(cmds)):
+				for j in range(len(cmds)-1, indent, -1):
 					if cmds[j] is not None:
 						newlines.append('%s\n' % cmds[j])
 						cmds[j] = None
 
-	for cmd in cmds:
+	for cmd in reversed(cmds):
 		if cmd is not None:
 			newlines.append('%s\n' % cmd)
 			
@@ -126,7 +126,7 @@ def replace_assignments(lines):
 			if fxn_arg_match is not None:
 				newlines.append(line)
 				continue
-			match = re.match(r'(\t*)([a-zA-Z]+[a-zA-Z\d_]*\.)*?([a-zA-Z]+[a-zA-Z\d_]*)(\[.+\])*? *=([^=][^\n]*)\n', line)
+			match = re.match(r'(\t*)([a-zA-Z]+[a-zA-Z\d_]*\.)*?([a-zA-Z]+[a-zA-Z\d_]*)(\[.+\])* *=([^=][^\n]*)\n', line)
 			if match is not None:
 				indent = match.group(1)
 				classname = 'None'
