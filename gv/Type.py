@@ -4,13 +4,14 @@ import stream
 import elaborate
 
 class Type(bit.bit):
-	def __init__(self, value=None, name=None):
+	def __init__(self, value=None, name=None, ref=None):
 		self._gvim = []
-		self.ref = None
-		self.ref = elaborate.ELABORATE.typedef(self.typename())
-		if self.ref is None:
-			self.impl()
-			self._gvim = elaborate.ELABORATE.endtypedef(self)	
+		self.ref = ref
+		if ref is None:
+			self.ref = elaborate.ELABORATE.typedef(self.typename())
+			if self.ref is None:
+				self.impl()
+				self._gvim = elaborate.ELABORATE.endtypedef(self)	
 		super().__init__(self.width(), value, name)
 
 	def __getattr__(self, v):
@@ -24,6 +25,9 @@ class Type(bit.bit):
 			import expr
 			return expr.dot_expr(self, attr)
 		return attr
+
+	def clone(self):
+		return Type(self.value(), None, self if self.ref is None else self.ref)
 
 	def typename(self):
 		if self.ref is not None:
@@ -42,6 +46,13 @@ class Type(bit.bit):
 
 	def __repr__(self):
 		return self.name()
+
+	def __declare_repr__(self):
+		if self.dxn() is not None:
+			return super().__declare_repr__()
+
+		rep = '%s %s;' % (self.typename(), self.name())
+		return rep
 
 	def __define_repr__(self):
 		s = StringIO()

@@ -1,42 +1,51 @@
 from io import StringIO
 import bit
+import module
 import stream
-import elaborate
 
-class reg(object):
-	var_count = 0
-	def __init__(self, width=1, rst_value=None, name=None):
-		# Elaborate here
-		self.name = name
-		if self.name is None:
-			self.name = 'r%d' % var_count
-			var_count += 1
-		self.rst_value = rst_value
-		self._width = width
-		elaborate.ELABORATE.reg(self)
-		self.impl()
-		elaborate.ELABORATE.endreg()
+class reg(module.module):
+	def __init__(self, width=1, rst_value=None):
+		self.rst_value = 0 if rst_value is None else rst_value
+		self.w = width
+		super().__init__()
+
+	def width(self):
+		return self.w
+
+	def name(self):
+		return 'register_%d_%d' % (self.width(), self.rst_value) 
 
 	def impl(self):
-		self.clk = bit.bit(1)
-		self.rst_l = bit.bit(1)
-		self.en = bit.bit(1)
-		self.clear = bit.bit(1)
-		self.D = bit.bit(self._width)
-		self.Q = bit.bit(self._width)
+		self.clk = bit.input(bit.bit(1))
+		self.rst_l = bit.input(bit.bit(1))
+		self.en = bit.input(bit.bit(1))
+		self.clear = bit.input(bit.bit(1))
+		self.D = bit.input(bit.bit(self.width()))
+		self.Q = bit.output(bit.bit(self.width()))
 
-	def __repr__(self):
+	def __inst_repr__(self, id):
 		s = StringIO()
 		f = stream.stream(s)
-		f.write('register #(%d' % self._width)
-		if self.rst_value is not None:
-			f.write(", 'd%d" % (self._width, self.rst_value))
-		f.write(') (.clk, .rst_l,\n')
-		f.indent()
-		f.writenl('.en(%s)' % self.en.__repr__())
-		f.writenl('.clear(%s)' % self.en.__repr__())
-		f.writenl('.en(%s)' % self.en.__repr__())
-		f.writenl('.D(%s)' % self.D.__repr__)
-		f.writenl('.Q(%s));' % self.Q.__repr__)
+		f.write('register #(%d, %d) REG%s(' % (
+			self.width(), self.rst_value, id))
+		more_than_one = False
+		indented = False
+		decls = self.decls()
+		for k in decls:
+			p = decls[k]
+			if p.dxn() is not None:
+				if more_than_one:
+					f.writenl(',', i=0)
+					if not indented:
+						f.indent()
+						indented = True
+				f.write(p.__cxn_repr__(self.cxnname(p.name())))
+				more_than_one = True
+
 		f.unindent()
+		f.writenl(');')
+
 		return s.getvalue()
+
+	def __repr__(self):
+		return ''

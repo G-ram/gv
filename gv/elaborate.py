@@ -51,10 +51,8 @@ class elaborate(object):
 			self.cmodule.append_block(stmt.block_stmt())
 			self.blocks.append(self.cmodule.blocks()[-1])
 			self.cblock = self.blocks[-1]
-			print('startmodule', self.cmodule.name())
 			self.cmodule.impl()
 			self.modules[m.name()] = m
-			print('endmodule', self.cmodule.name())
 
 			# Finish other modules
 			if len(self.finish_elaborate) > 0:
@@ -72,13 +70,6 @@ class elaborate(object):
 			self.cblock = self.blocks[-1]
 			self.cmodule.impl()
 			self.modules[m.name()] = m
-
-	def reg(self, r):
-		self.cmodule.registers.append(r)
-		self.disable_declare += 1
-
-	def endreg(self, r):
-		self.disable_declare -= 1
 
 	def typedef(self, t):
 		if t in self.cmodule.types().keys():

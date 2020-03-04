@@ -11,9 +11,11 @@ class module(object):
 			self.decls = {}
 			self.blocks = []
 			self.insts = []
-			self.regs = []
 
 	def __init__(self):
+		self._gvic = {}
+		self._gvimap = {}
+		self._gvicmap= {}
 		self._gvim = module.metadata()
 		self.ref = None
 		self.ref = elaborate.ELABORATE.module(self)
@@ -24,6 +26,9 @@ class module(object):
 		if self.ref is not None:
 			return self.ref.name()
 		return self.__class__.__name__
+
+	def cxnname(self, name):
+		return self._gvimap[name]
 
 	def types(self):
 		if self.ref is not None:
@@ -65,31 +70,30 @@ class module(object):
 			return self.ref.append_inst(inst)
 		self._gvim.insts.append(inst)
 
-	def regs(self):
-		if self.ref is not None:
-			return self.ref.regs()
-		return self._gvim.regs
-
-	def append_reg(self, reg):
-		if self.ref is not None:
-			self.ref.append_reg(reg)
-		self._gvim.regs.append(reg)
-
 	def impl(self):
 		raise NotImplementedError()
 
 	def __getattribute__(self, v):
 		ref = super().__getattribute__('ref')
 		attr = None
-		if ref is not None:
+		if ref is not None and v != '__inst_repr__' and v != 'cxnname' and \
+			v != '_gvic' and v != '_gvimap':
 			attr = ref.__getattribute__(v)
 		else:
 			attr = super().__getattribute__(v)
 		if v != 'ref' and isinstance(attr, bit.bit) and \
 			type(self) != type(elaborate.ELABORATE.cmodule):
-			# dot access to module
-			# do a clone if not already cloned
-			print(v)
+			if v not in self._gvic:
+				clone = attr.clone()
+				self._gvic[v] = clone
+				if ref is None:
+					self._gvimap[attr.name()] = clone
+					self._gvicmap[clone.name()] = attr.name()
+				else:
+					self._gvimap[self._gvicmap[attr.name()]] = clone
+					self._gvicmap[clone.name()] = self._gvicmap[attr.name()]
+					del self._gvicmap[attr.name()]
+			return self._gvic[v]
 		return attr
 
 	def __repr__(self):
@@ -123,23 +127,41 @@ class module(object):
 			if p.__repr__() not in ports and not p.const():
 				f.writenl(p.__declare_repr__())
 
-		for i in self.insts():
-			decls = i.module().decls()
-			for k in decls:
-				p = decls[k]
-				if p.dxn() is not None:
-					f.writenl(p.__declare_cxn_repr__())
-		f.blank()
+		if len(self.decls()) > 0:
+			f.blank()
 
 		f.writenl('always_comb')
 		for b in self.blocks():
 			f.writenl(b.__repr__())
 
+		inst_count = 0
 		for i in self.insts():
-			f.writenl(i.__repr__())
-
-		for r in self.regs():
-			f.writenl(r.__repr__())
+			f.writenl(i.__inst_repr__(inst_count))
+			inst_count += 1
 
 		f.writenl('endmodule : %s' % self.name())
 		return s.getvalue()
+
+	def __inst_repr__(self, id):
+		s = StringIO()
+		f = stream.stream(s)
+		f.write('%s %s%s(' % (self.name(), self.name(), id))
+		more_than_one = False
+		indented = False
+		decls = self.decls()
+		for k in decls:
+			p = decls[k]
+			if p.dxn() is not None:
+				if more_than_one:
+					f.writenl(',', i=0)
+					if not indented:
+						f.indent()
+						indented = True
+				f.write(p.__cxn_repr__(self._gvimap[p.name()]))
+				more_than_one = True
+
+		f.unindent()
+		f.writenl(');')
+
+		return s.getvalue()
+

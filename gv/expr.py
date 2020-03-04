@@ -66,7 +66,7 @@ class dot_expr(expr):
 class assign_expr(expr):
 	def __init__(self, dest, src):
 		self.dest = dest
-		self.src = src
+		self.src = bit.conv(dest.width(), src)
 		self.value = src.value
 		super().__init__(self.dest.width(), None, None)
 

@@ -121,28 +121,8 @@ class inst_stmt(stmt):
 	def connect(self, cxn):
 		self.append_cxn(cxn)
 
-	def __repr__(self):
-		s = StringIO()
-		f = stream.stream(s)
-		f.write('%s %s(' % (self.module().name(), self.name()))
-		more_than_one = False
-		indented = False
-		decls = self.module().decls()
-		for k in decls:
-			p = decls[k]
-			if p.dxn() is not None:
-				if more_than_one:
-					f.writenl(',', i=0)
-					if not indented:
-						f.indent()
-						indented = True
-				f.write(p.__cxn_repr__())
-				more_than_one = True
-
-		f.unindent()
-		f.writenl(');')
-
-		return s.getvalue()
+	def __inst_repr__(self, id):
+		return self.module().__inst_repr__(id)
 
 class block_stmt(stmt):
 	def __init__(self, *args):

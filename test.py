@@ -38,6 +38,14 @@ class top(MODULE):
 		test_inst2.i = self.c
 		l.w = test_inst2.o
 
+		reg = REG()
+		reg.clk = self.c
+		reg.rst_l = self.c
+		reg.en = self.c
+		reg.clear = self.c
+		reg.D = self.c
+		l.w = reg.Q
+
 		if self.c == BIT(2, 3):
 			self.c = BIT(2, 1)
 		elif self.c == BIT(2, 1):
