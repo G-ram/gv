@@ -146,6 +146,8 @@ class block_stmt(stmt):
 		return rep
 
 def connect(dest, src):
+	if not isinstance(dest, bit.bit):
+		raise TypeError
 	import expr
 	return stmt(expr.assign_expr(dest, src))
 
@@ -160,7 +162,7 @@ class cond(object):
 		if isinstance(expr, bit.bit):
 			# Elaborate here
 			elaborate.ELABORATE.block()
-			body() 
+			body()
 			block = elaborate.ELABORATE.endblock()
 			self.logic_conditional = True
 			self.rep.set_if_block(expr, block)

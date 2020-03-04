@@ -30,6 +30,14 @@ class module(object):
 	def cxnname(self, name):
 		return self._gvimap[name]
 
+	def cxnport(self, name):
+		for k in self._gvic:
+			lookup = self._gvic[k].name()
+			mapped = self._gvimap[name].name()
+			if lookup == mapped:
+				return k
+		return ''
+
 	def types(self):
 		if self.ref is not None:
 			return self.ref.types()
@@ -82,7 +90,7 @@ class module(object):
 		else:
 			attr = super().__getattribute__(v)
 		if v != 'ref' and isinstance(attr, bit.bit) and \
-			type(self) != type(elaborate.ELABORATE.cmodule):
+			self.name() != elaborate.ELABORATE.cmodule.name():
 			if v not in self._gvic:
 				clone = attr.clone()
 				self._gvic[v] = clone

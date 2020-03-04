@@ -26,7 +26,7 @@ class unary_op(expr):
 		super().__init__(op.width(), None, None)
 
 	def __repr__(self):
-		return '(%s%s)' % (str(self.operator.__repr__()), self.op.__repr__())
+		return '(%s%s)' % (self.operator, self.op.__repr__())
 
 class list_op(expr):
 	def __init__(self, *args):
@@ -50,15 +50,22 @@ class bracket_expr(expr):
 
 	def __repr__(self):
 		if self.high is None:
-			return '(%s[%s])' % (self.op.__repr__(), self.low.__repr__())
-		return '(%s[%s:%s])' % (
+			return '%s[%s]' % (self.op.__repr__(), self.low.__repr__())
+		return '%s[%s:%s]' % (
 			self.op.__repr__(), self.high.__repr__(), self.low.__repr__())
 
+# What happens with several dot expressions in a row
 class dot_expr(expr):
 	def __init__(self, obj, mem):
 		self.obj = obj
 		self.mem = mem
 		super().__init__(self.mem.width(), None, None)
+
+	def __getattribute__(self, v):
+		try:
+			return super().__getattribute__(v)
+		except AttributeError:
+			return dot_expr(self, getattr(mem, v))
 
 	def __repr__(self):
 		return '%s.%s' % (self.obj.__repr__(), self.mem.__repr__())
@@ -67,7 +74,7 @@ class assign_expr(expr):
 	def __init__(self, dest, src):
 		self.dest = dest
 		self.src = bit.conv(dest.width(), src)
-		self.value = src.value
+		self.value = self.src.value
 		super().__init__(self.dest.width(), None, None)
 
 	def __repr__(self):

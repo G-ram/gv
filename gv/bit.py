@@ -118,12 +118,12 @@ class bit(object):
 
 	# Overloads
 	def __getitem__(self, key):
+		def get_idx(v):
+			return v.value() if v.value() >= 0 else self.width() - v.value()
+
 		if isinstance(key, slice):
 			s = conv(self.width(), key.start)
 			e = conv(self.width(), key.stop)
-
-			def get_idx(v):
-				return v.value() if v.value() >= 0 else self.width() - v.value()
 
 			if self.const() and s.const() and e.const():
 				start = get_idx(s)
@@ -228,6 +228,9 @@ class bit(object):
 
 	def __ne__(self, other):
 		return bit.__make_bin_op(self, conv(self.width(), other), '!=')
+
+	def __not__(self, other):
+		return bit.__make_bin_op(self, conv(self.width(), other), '!')
 
 def output(handle):
 	handle.set_dxn(1)

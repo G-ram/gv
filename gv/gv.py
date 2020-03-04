@@ -13,7 +13,9 @@ def strip_comments(lines):
 	newlines = []
 	for line in lines:
 		if '#' in line:
-			newlines.append(line[line.index('#'):])
+			newlines.append(line[:line.index('#')])
+			if '\n' not in newlines[-1]:
+				newlines[-1] = '%s\n' % newlines[-1]
 		else:
 			newlines.append(line)
 	return newlines
@@ -120,7 +122,11 @@ def replace_assignments(lines):
 			found_impl = True
 
 		if found_module and found_impl:
-			match = re.match(r'(\t*)([a-zA-Z]+[a-zA-Z\d_]*\.)?([a-zA-Z]+[a-zA-Z\d_]*)(\[[\d:]+\])? *=([^=][^\n]*)\n', line)
+			fxn_arg_match = re.match(r'(\t*)([a-zA-Z]+[a-zA-Z\d_]*\.)*?([a-zA-Z]+[a-zA-Z\d_]*)\(.*\)', line)
+			if fxn_arg_match is not None:
+				newlines.append(line)
+				continue
+			match = re.match(r'(\t*)([a-zA-Z]+[a-zA-Z\d_]*\.)*?([a-zA-Z]+[a-zA-Z\d_]*)(\[.+\])*? *=([^=][^\n]*)\n', line)
 			if match is not None:
 				indent = match.group(1)
 				classname = 'None'
@@ -131,25 +137,43 @@ def replace_assignments(lines):
 					tostr(match.group(2)), 
 					tostr(match.group(3)), 
 					tostr(match.group(4)))
-				post_eq = '%s%s' % (tostr(match.group(4)), tostr(match.group(5)))
-
-				if match.group(2) is None:
-					newlines.append('%sif EXISTS("%s", locals(), globals()) and isinstance(%s, BIT):\n' % (
-						indent, name, pre_eq))
-					newlines.append('%s\tCONNECT(%s, (%s))\n' % (indent, pre_eq, post_eq))
-					newlines.append('%selse:\n' % (indent))
-					newlines.append('\t%s' % line)
-				else:
-					newlines.append('%sif EXISTS("%s", %s) and isinstance(%s, BIT):\n' % (
-						indent, name, classname, pre_eq))
-					newlines.append('%s\tCONNECT(%s, (%s))\n' % (indent, pre_eq, post_eq))
-					newlines.append('%selse:\n' % (indent))
-					newlines.append('\t%s' % line)
+				post_eq = '%s' % (tostr(match.group(5)))
+				newlines.append('%stry:\n' % indent)
+				var_match = re.match(r'(\t*)([a-zA-Z]+[a-zA-Z\d_]*)', line)
+				v = var_match.group(2)
+				newlines.append('%s\t# nonlocal %s\n' % (indent, v))
+				newlines.append('%s\tCONNECT(%s, (%s))\n' % (indent, pre_eq, post_eq))
+				newlines.append('%sexcept:\n' % indent)
+				newlines.append('\t%s' % line)
 			else:
 				newlines.append(line)
 		else:
 			newlines.append(line)
 	return newlines
+
+def fix_assignments(lines):
+	newlines = []
+	i = 0
+	while i < len(lines):
+		if 'else_body()' in lines[i] or 'if_body()' in lines[i]:
+			indent = lines[i].count('\t')
+			newlines.append(lines[i])
+			i += 1
+			start = i
+			for j, line in enumerate(lines[start:]):
+				if line.count('\t') <= indent and len(line.strip()) > 0:
+					break
+				if '#' in line:
+					newlines.append(line.replace('# ', ''))
+				else:
+					newlines.append(line)
+				i += 1
+		else:
+			newlines.append(lines[i])
+			i += 1
+
+	return newlines
+
 
 def main(args):
 	f = stream(sys.stdout)
@@ -169,6 +193,7 @@ def main(args):
 		lines = strip_comments(lines)
 		lines = replace_conditionals(lines)
 		lines = replace_assignments(lines)
+		lines = fix_assignments(lines)
 
 	for line in lines:
 		f.write(line)

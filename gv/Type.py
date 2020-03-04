@@ -7,14 +7,17 @@ class Type(bit.bit):
 	def __init__(self, value=None, name=None, ref=None):
 		self._gvim = []
 		self.ref = ref
+		w = 1
 		if ref is None:
 			self.ref = elaborate.ELABORATE.typedef(self.typename())
 			if self.ref is None:
 				self.impl()
-				self._gvim = elaborate.ELABORATE.endtypedef(self)	
-		super().__init__(self.width(), value, name)
+				self._gvim = elaborate.ELABORATE.endtypedef(self)
+			w = self.width()
+		super().__init__(w, value, name)
 
-	def __getattr__(self, v):
+	import inspect
+	def __getattribute__(self, v):
 		ref = super().__getattribute__('ref')
 		attr = None
 		if ref is not None:
@@ -23,11 +26,17 @@ class Type(bit.bit):
 			attr = super().__getattribute__(v)
 		if v != 'ref' and isinstance(attr, bit.bit):
 			import expr
-			return expr.dot_expr(self, attr)
-		return attr
+			if attr.name() in list(map(lambda x: x.name(), self.members())):
+				return expr.dot_expr(self, attr)
+			elif isinstance(attr, expr.dot_expr):
+				return expr.dot_expr(self, attr.mem)
+		return super().__getattribute__(v)
 
 	def clone(self):
-		return Type(self.value(), None, self if self.ref is None else self.ref)
+		c = Type(self.value(), None, self if self.ref is None else self.ref)
+		c.set_width(self.width())
+		c.set_dim(*self.dim())
+		return c
 
 	def typename(self):
 		if self.ref is not None:

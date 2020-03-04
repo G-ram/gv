@@ -93,7 +93,9 @@ class elaborate(object):
 	def endblock(self):
 		if len(self.blocks) == 0:
 			raise IndexError
-		return self.blocks.pop()
+		last = self.blocks.pop()
+		self.cblock = self.blocks[-1]
+		return last
 
 	def stmt(self, s):
 		self.cblock.append_stmt(s)

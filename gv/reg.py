@@ -39,7 +39,7 @@ class reg(module.module):
 					if not indented:
 						f.indent()
 						indented = True
-				f.write(p.__cxn_repr__(self.cxnname(p.name())))
+				f.write('.%s(%s)' % (self.cxnport(p.name()), self.cxnname(p.name())))
 				more_than_one = True
 
 		f.unindent()
