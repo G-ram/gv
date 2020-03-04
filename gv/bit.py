@@ -229,8 +229,8 @@ class bit(object):
 	def __ne__(self, other):
 		return bit.__make_bin_op(self, conv(self.width(), other), '!=')
 
-	def __not__(self, other):
-		return bit.__make_bin_op(self, conv(self.width(), other), '!')
+	def __bool__(self):
+		return bit.__make_bin_op(self, conv(self.width(), 1), '==')
 
 def output(handle):
 	handle.set_dxn(1)
